@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -64,6 +65,9 @@ services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		ValidateIssuerSigningKey = true,
 		IssuerSigningKey = secKey
 	};
+});
+services.Configure<MvcOptions>(opt => {
+    opt.Filters.Add<JWTValidationFilter>();
 });
 var app = builder.Build();
 

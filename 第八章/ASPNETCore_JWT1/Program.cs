@@ -17,21 +17,27 @@ builder.Services.AddSwaggerGen(c =>
 {
     var scheme = new OpenApiSecurityScheme()
     {
-        Description = "Authorization header. \r\nExample: 'Bearer 12345abcdef'",
-        Reference = new OpenApiReference{Type = ReferenceType.SecurityScheme,
-            Id = "Authorization"},
-        Scheme = "oauth2",Name = "Authorization",
-        In = ParameterLocation.Header,Type = SecuritySchemeType.ApiKey,
+        Description = "注意HTTP协议头格式为\r\n Authorization: Bearer XXX.XXXX.XXX", // "Bearer eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoibGl1cXVuIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiYWRtaW4iLCJleHAiOjE2ODQ5MTA2OTh9.mLz89TpUO7mb4wR6QEt_k2KKpHk7YNUDKn_ZgCNNd90",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Authorization"
+        },
+        Scheme = "oauth2",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
     };
     c.AddSecurityDefinition("Authorization", scheme);
     var requirement = new OpenApiSecurityRequirement();
     requirement[scheme] = new List<string>();
     c.AddSecurityRequirement(requirement);
-}); 
+});
 var services = builder.Services;
-services.AddDbContext<IdDbContext>(opt => {
-    string connStr = builder.Configuration.GetConnectionString("Default");
-    opt.UseSqlServer(connStr);
+services.AddDbContext<IdDbContext>(opt =>
+{
+    string connStrMySql = builder.Configuration.GetConnectionString("MySql");
+    opt.UseMySql(connStrMySql, MySqlServerVersion.Parse("5.6.20-mysql"));
 });
 services.AddDataProtection();
 services.AddIdentityCore<User>(options =>
@@ -51,19 +57,19 @@ idBuilder.AddEntityFrameworkStores<IdDbContext>()
     .AddUserManager<UserManager<User>>();
 services.Configure<JWTOptions>(builder.Configuration.GetSection("JWT"));
 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(x =>
+.AddJwtBearer(opt =>
 {
-	var jwtOpt = builder.Configuration.GetSection("JWT").Get<JWTOptions>();
-	byte[] keyBytes = Encoding.UTF8.GetBytes(jwtOpt.SigningKey);
-	var secKey = new SymmetricSecurityKey(keyBytes);
-	x.TokenValidationParameters = new()
-	{
-		ValidateIssuer = false,
-		ValidateAudience = false,
-		ValidateLifetime = true,
-		ValidateIssuerSigningKey = true,
-		IssuerSigningKey = secKey
-	};
+    var jwtOpt = builder.Configuration.GetSection("JWT").Get<JWTOptions>();
+    byte[] keyBytes = Encoding.UTF8.GetBytes(jwtOpt.SigningKey);
+    var secKey = new SymmetricSecurityKey(keyBytes);
+    opt.TokenValidationParameters = new()
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = secKey
+    };
 });
 var app = builder.Build();
 
